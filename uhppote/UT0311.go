@@ -9,6 +9,7 @@ import (
 	"time"
 
 	codec "github.com/uhppoted/uhppote-core/encoding/UTO311-L0x"
+	"golang.org/x/net/proxy"
 )
 
 type ut0311 struct {
@@ -262,7 +263,7 @@ func (u *ut0311) SendTCP(addr *net.TCPAddr, request []byte) ([]byte, error) {
 		defer guard.Unlock()
 	}
 
-	dialer := net.Dialer{
+	forwardDialer := net.Dialer{
 		Deadline:  deadline,
 		LocalAddr: bind,
 		Control: func(network, address string, connection syscall.RawConn) (err error) {
@@ -279,6 +280,8 @@ func (u *ut0311) SendTCP(addr *net.TCPAddr, request []byte) ([]byte, error) {
 			}
 		},
 	}
+
+	dialer := proxy.FromEnvironmentUsing(&forwardDialer)
 
 	if connection, err := dialer.Dial("tcp4", address); err != nil {
 		return nil, err
